@@ -1,0 +1,109 @@
+//	Created by: Michael Braddy
+//	Created on: 2/13/17
+//	Created for: String assignment
+
+#define _CRT_SECURE_NO_WARNINGS
+#define PAUSE system("pause")
+#define CLS system("cls")
+#define FLUSH fflush(stdin)
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+//	Prototype Functions:
+void flipTheString(char *inputString);
+void lengthOfTheString(char *inputString);
+void retrieveTheString(char *inputString);
+void standTheStringUp(char *inputString);
+void triangleTheString(char *inputString);
+//	Prototype End
+
+main() {
+	char *inputString[100];
+	int userChoice = 0;
+
+	do {
+		retrieveTheString(inputString);	//	Gets string from user
+		flipTheString(inputString);	//	Flips string
+		PAUSE;
+		lengthOfTheString(inputString);	//	determines length of string
+		PAUSE;
+		standTheStringUp(inputString);	//	stands the string vertically
+		PAUSE;
+		triangleTheString(inputString);	//	makes a triangle out of the string
+		PAUSE;
+
+		CLS;
+		printf("Would you like to try again?\n1. Yes\n2. No\n");
+
+		scanf("%i", &userChoice); FLUSH;
+
+	} while (userChoice != 2);
+}
+
+void flipTheString(char *inputString) {
+	char flippedString[100];	//	Storage for flipped string
+	int length = strlen(inputString) - 1;	//	length of string - the null character
+	int j = 0;	//	a counter
+	CLS;
+	
+	for (int i = 0; i < strlen(inputString); i++) {	//	for the length of the string, fill the flipped string with the last element in it (decrementing)
+		flippedString[j] = inputString[length];
+		length--;
+		j++;
+	}
+
+	for (int i = 0; i < strlen(inputString); i++) {	//	Prints the flipped string
+		printf("%c", flippedString[i]);
+	}
+	
+	printf("\n");
+}
+
+void lengthOfTheString(char *inputString) {
+	int length = strlen(inputString) - 1;	//	counts length minus null char
+	CLS;
+	printf("The length of the string is %d.\n", length);	//	prints
+}
+
+void retrieveTheString(char *inputString) {	//	gets and stores a string
+	printf("Enter a string: \n");
+	fgets(inputString, 100, stdin);
+}
+
+void standTheStringUp(char *inputString) {
+	CLS;
+	while (*inputString != '\0') {	//	while string pointer isn't on the null character, prints char, next line, increments
+		putchar(*inputString);
+		printf("\n");
+		inputString++;
+	}
+	printf("\n");
+}
+
+void triangleTheString(char *inputString) {
+	CLS;
+	int controlVariable = 1;	//	Control variable for the number of letters per line
+	int counter = 0;	//	counter for the number of actual characters in the string that have been displayed so far
+	int length = strlen(inputString);	//	total length
+
+	for (int j = 0; j < length; j++) {	//	loops a total of times equal to the length of the string
+		for (int i = 0; i < controlVariable; i++) {
+			if (*inputString == '\0') {	//	If the pointer is on the null character, continue the loop
+				continue;
+			}
+			else {
+				putchar(*inputString);	//	If there are still characters to be printed, prints them, incremements the string, then checks if it's time for a new line
+				*inputString++;
+				counter++;
+				if (counter == controlVariable) {
+					printf("\n");
+					counter = 0;
+				}
+			}
+		}
+		controlVariable++;	//	increments number of chars per line
+	}
+
+}
