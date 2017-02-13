@@ -1,0 +1,202 @@
+//	Created by: Michael Braddy
+//	Created on: 2/5/17 (Started) - 2/12/17 (Finished)
+//	Created for: Assignment 08, IO Assignment
+
+#define _CRT_SECURE_NO_WARNINGS
+#define PAUSE system("pause")
+#define FLUSH fflush(stdin)
+#define CLS system("cls")
+#define TOTAL_STUDENTS 100
+#define EXAMS 4
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <io.h>
+
+
+//	Prototype Functions:
+void classAverageExamScores(int studentsExams[][EXAMS], int studentCounter);
+void mainMenu();
+void saveToText(int studentsExams[][EXAMS], int studentCounter);
+void singleStudentExamAverage(int studentsExams[][EXAMS], int studentCounter);
+//	End Prototype
+
+//	Main Start
+main() {
+	int studentsExams[TOTAL_STUDENTS][EXAMS];	//	2D array
+	int examScore;
+	int mSelection = 0;
+	int studentCounter = 0;
+
+	FILE *binaryOutput;	//	File pointer for Binary loading / saving
+
+	binaryOutput = fopen("assignmentEightBinaryOutput.bin", "rb");	//	connects to output
+	
+	if (binaryOutput != NULL) {	//	if it exists, read info
+		fread(&studentCounter, sizeof(int), 1, binaryOutput);	//	Loads the student IDs
+		fread(studentsExams, sizeof(int), TOTAL_STUDENTS * EXAMS, binaryOutput);	//	Loads the 2d Array of scores
+	}
+
+	fclose(binaryOutput);
+
+	//////////////////////////////////////End Binary Read///////////////////////////////////////////////////
+
+		//	Main Menu Start
+	do {
+		mainMenu();	//	Function Call
+		scanf("%i", &mSelection); FLUSH;
+
+		switch (mSelection) { // Begin switch
+
+		case 1:
+			studentCounter++;	//	Incremental Student ID
+			CLS;
+			printf("Enter student number %i's exam scores: \n", studentCounter);
+			printf("Exam One: ");
+			scanf_s("%i", &examScore);
+			studentsExams[studentCounter - 1][0] = examScore;
+			printf("Exam Two: ");
+			scanf_s("%i", &examScore);
+			studentsExams[studentCounter - 1][1] = examScore;
+			printf("Exam Three: ");
+			scanf_s("%i", &examScore);
+			studentsExams[studentCounter - 1][2] = examScore;
+			printf("Exam Four: ");
+			scanf_s("%i", &examScore);
+			studentsExams[studentCounter - 1][3] = examScore;
+			break;
+
+		case 2:
+			singleStudentExamAverage(studentsExams, studentCounter);	//	Individual Exam Averages
+			break;
+
+		case 3:
+			classAverageExamScores(studentsExams, studentCounter);	//	Class Average
+			break;
+
+		case 4:
+			CLS;
+			binaryOutput = fopen("assignmentEightBinaryOutput.bin", "wb");	//	Overwrites any saved progress
+			for (int i = 0; i < TOTAL_STUDENTS; i++) {
+				for (int j = 0; j < EXAMS; j++)
+					studentsExams[i][j] = 0;
+			}
+			studentCounter = 0;	//	clears student IDs
+			fclose(binaryOutput);
+			printf("\n\nGradebook Cleared.\n\n");
+			break;
+
+		case 5:
+			saveToText(studentsExams, studentCounter);	//	Output to text file
+			printf("\nSaved to text file.\n");
+			break;
+
+		case 6:
+			printf("\nExitting program.\n");	//	Exits
+			break;
+
+		default:	
+			printf("\nPlease input a valid option.\n");
+			break;
+		} // End switch
+
+			PAUSE;
+
+	} while (mSelection != 6);
+	////////////////////////////////////////////////////Main Menu End//////////////////////////////////////////////////
+
+		//	Save 2D array to Binary Start 
+	binaryOutput = fopen("assignmentEightBinaryOutput.bin", "wb");	//	Creates a save file when exitting program
+	fwrite(&studentCounter, sizeof(int), 1, binaryOutput);	//	stores the studentCounter variable which is used as a student ID
+	fwrite(studentsExams, sizeof(int), TOTAL_STUDENTS * EXAMS, binaryOutput);	//	stores the exam array
+	fclose(binaryOutput);
+
+	////////////////////////////////////////////////////Binary Save End////////////////////////////////////////////////
+
+		return 0;
+}
+
+////////////////////////////////////////////////////End Of Main////////////////////////////////////////////////////////
+
+//	classAverageExamScores start
+void classAverageExamScores(int studentsExams[][EXAMS], int studentCounter) {
+	int studentSum = 0;
+	double totalAverage, studentAverage, studentSumOfAverages = 0;
+
+	for (int i = 0; i < studentCounter; i++) {	//	for the number of students that have been entered, will cycle through and find out each average
+		studentSum = 0;
+		for (int j = 0; j < EXAMS; j++) {
+			studentSum += studentsExams[i][j];
+		}
+		studentAverage = (double)studentSum / EXAMS;
+		studentSumOfAverages += studentAverage;	//	Totals individual averages
+	}
+
+	totalAverage = studentSumOfAverages / studentCounter;	//	Determines class average
+	CLS;
+	printf("The Class Average is: %.2lf\n\n", totalAverage);
+}
+//////////////////////////////////////////////////End of classAverageExamScores////////////////////////////////////////
+
+//	mainMenu start
+	void mainMenu() {
+
+			CLS;	//	Just a print menu
+
+			printf("What would you like to do? \n");
+			printf("\n 1. Enter a new student and four exam results");
+			printf("\n 2. Display the average exam scores for a student");
+			printf("\n 3. Display the class averages");
+			printf("\n 4. Clear the gradebook");
+			printf("\n 5. Output gradebook to text file");
+			printf("\n 6. Exit the program");
+
+			printf("\n Enter Selection: ");
+
+	}
+//////////////////////////////////////////////////End of mainMenu//////////////////////////////////////////////////////
+
+//	saveToText start
+	void saveToText(int studentsExams[][EXAMS], int studentCounter) {
+		FILE *examOutput;	//	Creates a temporary pointer to a file (Didn't want to pass/use the binary one since it's actually titled with Binary)
+		
+		examOutput = fopen("assignmentEightOutput.txt", "w");	//	Creates the Text file / Overwrites the existing one
+		fprintf(examOutput, "Gradebook:\nStudent ID\t\tExam One\tExam Two\tExam Three\tExam Four\n");	//	Banner
+
+		for (int i = 0; i < studentCounter; i++) {	//	Prints a formatted list of student Ids followed by their individual scores
+			fprintf(examOutput, "%i\t\t\t",i + 1);
+			for (int j = 0; j < EXAMS; j++) {
+				fprintf(examOutput, "%i\t\t", studentsExams[i][j]);
+			}
+			fprintf(examOutput, "\n");
+		}
+
+		fclose(examOutput);
+	}
+//////////////////////////////////////////////////End of saveToText////////////////////////////////////////////////////
+
+//	singleStudentExamAverage Start
+	void singleStudentExamAverage(int studentsExams[][EXAMS], int studentCounter) {
+		int userChoice = 0, sum = 0;
+		double average;
+		CLS;
+		
+		printf("Enter the ID of the student you wish to find the average of: ");
+		scanf("%i", &userChoice); FLUSH;
+
+		if (userChoice > studentCounter) {	//	error checking to make sure user doesn't input a tricky answer
+			printf("Enter a Valid Option Next Time\n");
+		}
+		else if (userChoice < 1) {
+			printf("Enter a Valid Option Next Time\n");
+		}
+		else {
+			for (int i = 0; i < EXAMS; i++) {
+				sum += studentsExams[userChoice - 1][i];	//	totals the student's exams
+			}
+			average = (double)sum / EXAMS;	//	averages
+			printf("\nStudent %i has an average of %.2lf across their exams.\n", userChoice, average);	//	prints
+		}
+
+	}
+//////////////////////////////////////////////////End of singleStudentExamAverage////////////////////////////////////////
