@@ -1,0 +1,51 @@
+//	Created by: Michael Braddy
+//	Created on: 2/19/17
+//	Created for: Resume scanner assignment
+
+#define _CRT_SECURE_NO_WARNINGS
+#define PAUSE system("pause")
+
+#include <stdlib.h>
+#include <stdio.h>
+
+main() {
+
+	FILE* myResume;
+	int keywordCounter = 0;
+	char keywordOne[] = "Java";
+	char keywordTwo[] = "Programming";
+	char scannedWord[50];
+
+	myResume = fopen("resumeKeywords.txt", "r");
+
+	if (myResume == NULL) {
+		printf("The File isnt where it should be.\n");
+		PAUSE;
+		exit(-1);
+	}
+	
+	for (;;) {	//	infinite loop for reading file
+		
+		fscanf(myResume, " ,");		//	Skips spaces and ,
+
+		if (fscanf(myResume, " %20[^, \t\n]", scannedWord) == 1) {	//	returns true if a word was scanned, otherwise skips over (in case of multiple commas or end of file)
+			
+			if (!strcmp(scannedWord, keywordOne)) {	//	Compares two strings (keyword and scanned word) if true, increments counter
+				keywordCounter++;
+			}
+			else if (!strcmp(scannedWord, keywordTwo)) {
+				keywordCounter++;
+			}
+
+		}
+		if (feof(myResume))	//	Escape condition for loop
+			break;
+	}
+
+
+	printf("The keywords %s and %s were found in the resume file %i times.\n", keywordOne, keywordTwo, keywordCounter);	//	print statement
+
+	fclose(myResume);
+	PAUSE;
+}
+
