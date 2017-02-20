@@ -1,0 +1,83 @@
+//////////////////////////////////////////////////
+//	Created by: Michael Braddy	              	//
+//	Created on: 2/19/17			                    //
+//	Created for: Short struct assignment	      //
+//////////////////////////////////////////////////
+
+#define _CRT_SECURE_NO_WARNINGS
+#define PAUSE system("pause");
+#define FLUSH fflush(std.in);
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+typedef struct {
+	short month;
+	short day;
+	short year;
+
+} DATE;
+
+typedef struct {
+	DATE birthday;
+	char gender[7];
+	double annualIncome;
+
+} PERSON;
+
+//	Prototype Functions
+void displayThePerson(PERSON *aPerson, char *whichOne[] );
+void populateTheDate(DATE *aDate);
+void populateThePerson(PERSON *aPerson, DATE *birthday);
+//	End Prototyping
+
+main() {	//	Main Start
+	srand(time(NULL));
+
+	DATE birthdayOne, birthdayTwo, birthdayThree;
+	PERSON personOne, personTwo, personThree;
+
+	populateTheDate(&birthdayOne);
+	populateTheDate(&birthdayTwo);
+	populateTheDate(&birthdayThree);
+
+	populateThePerson(&personOne, &birthdayOne);
+	populateThePerson(&personTwo, &birthdayTwo);
+	populateThePerson(&personThree, &birthdayThree);
+
+	displayThePerson(&personOne, "one");
+	displayThePerson(&personTwo, "two");
+	displayThePerson(&personThree, "three");	
+
+	PAUSE
+}
+////////////////////////////	Main End	////////////////////////////
+
+void displayThePerson(PERSON *aPerson, char *whichOne[] ) {
+	printf("Person %s:\nBirthday: %02i\\%02i\\%i", whichOne, aPerson->birthday.month, aPerson->birthday.day, aPerson->birthday.year);
+	printf("\nGender: %7s", aPerson->gender);
+	printf("\nAnnual Income: %.2lf\n\n", aPerson->annualIncome);
+}
+
+void populateTheDate(DATE *aDate) {
+	aDate-> month = (rand() % 12 + 1);	//	random month
+	aDate-> day = (rand() % 31 + 1);	//	random day
+	aDate-> year = (rand() % 50 + 1950);	//	random year
+}
+
+void populateThePerson(PERSON *aPerson, DATE *birthday) {
+	short x = rand()%2 + 1;
+
+	aPerson->birthday = *birthday;	//	aPerson's birthday gets what's in that birthday
+	
+	if (x == 1) {	//	flip coin for gender
+		strcpy(aPerson->gender, "Male");
+	}
+	else {
+		strcpy(aPerson->gender, "Female");
+	}
+
+	aPerson->annualIncome = rand() % 100000	+ 14000;	//	Check who went to college
+
+}
