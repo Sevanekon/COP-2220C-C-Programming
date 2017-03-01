@@ -1,0 +1,527 @@
+/////////////////////////////////////////////////////////////
+//	Created by: Michael Braddy, Norman Matias, Kenny Cheng
+//	Created on: Feb. 2017
+//	Created for: Exam 2 - Battleship Assignment
+/////////////////////////////////////////////////////////////
+
+#define _CRT_SECURE_NO_WARNINGS
+#define CLS system("cls")
+#define PAUSE system("pause")
+#define TOPTEN 10
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <Windows.h>
+
+typedef struct {
+	int size; //Size of ship, resuable in for loops
+	char letter; //GUI char representation of ship
+	int gps[2][2]; //coordinates; starting position and ending position. Ship occupies values ([0]-[0],[1]-[1])
+} SHIP;
+
+typedef struct {
+	int gameCounter;
+	int winningScore;
+	int losingScore;
+} GAMERESULT;
+
+/////////////////////////////	Prototyping Start
+void clearBoard(char board[10][10]);
+void clearBuffer();
+void delay(unsigned int mseconds);
+void deploy(SHIP vessel, char board[10][10]);
+void display(char board[10][10]);
+void flagHeader();
+void flagFooter();
+void gameLoading(int gameScores[TOPTEN]);
+void gameRecording(int gameScores[TOPTEN]);
+void loadscreen(int* selection);
+void launchMissile(char x, char y, int *hits, char board[10][10], char screenboard[10][10]);
+void newGame(SHIP crusor, SHIP aircraft, SHIP battleship, SHIP submarine, SHIP destroyer, char board[10][10], char screenboard[10][10], int gameScores[TOPTEN]);
+int rng(int min, int max);
+void scoreRecording(int shots, int gameScores[TOPTEN]);
+void showTopTen(int finalGameResults[TOPTEN]);
+/////////////////////////////	Prototyping End
+
+int main() {
+	time_t t;
+	srand((unsigned)time(&t));
+
+	int selection; //User controls
+	int exit = 0; //Exit terminator
+
+	char board[10][10]; //Game Board 10x10. Where enemy ships are placed
+	char screenboard[10][10]; //Game Board seen by player for missile targeting.
+	int gameScores[TOPTEN];
+
+	gameLoading(gameScores);
+
+	gameScores[0] = 100;
+
+	SHIP crusor, aircraft, battleship, submarine, destroyer;
+	//1. (C) Crusor (2 Holes)
+	//2. (A) Aircraft Carrier (5 Holes)
+	//3. (B) Battleship (4 Holes)
+	//4. (S) Submarine (3 Holes)
+	//5. (D) Destroyer (3 Holes)
+
+	//Dimensions
+	crusor.size = 2;
+	aircraft.size = 5;
+	battleship.size = 4;
+	submarine.size = 3;
+	destroyer.size = 3;
+
+	//GUI Representations
+	crusor.letter = 'C';
+	aircraft.letter = 'A';
+	battleship.letter = 'B';
+	submarine.letter = 'S';
+	destroyer.letter = 'D';
+
+	//GAME STARTS//
+	do {
+
+		loadscreen(&selection);
+
+		switch (selection)
+		{
+		case 1: //New Game
+			newGame(crusor, aircraft, battleship, submarine, destroyer, board, screenboard, gameScores);
+			break;
+		case 2: //High Scores
+			showTopTen(gameScores);
+			break;
+		case 3: //Exit
+			printf("Exitting Game.\n");
+			gameRecording(gameScores);
+			exit = 1;
+			PAUSE;
+			break;
+		default: //Safety
+			printf("Invalid Selection; ");
+			PAUSE;
+			break;
+		}
+	} while (exit != 1);
+
+
+
+}
+
+void clearBoard(char board[10][10]) {
+
+	for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < 10; j++) {
+			board[i][j] = ' ';
+		}
+	} //Initialize EMPTY Board
+}
+
+void clearBuffer() {
+	int c;
+	while ((c = getchar()) != '\n' && c != EOF);
+}
+
+void delay(unsigned int mseconds)
+{
+	clock_t goal = mseconds + clock();
+	while (goal > clock());
+}
+
+void deploy(SHIP vessel, char board[10][10]) {
+	int x, y, z;
+	int fits;
+	int c;
+
+	//Make sure the ship fits the target location
+	do {
+		fits = 0; //loop breaker for when a valid placement is randomly asssigned
+		c = 0; //knots counter to measure empty space for ship navigation
+		x = rng(0, 9); //Random latitude
+		y = rng(0, 9); //Random longitude
+		z = rng(1, 2); //Random orientation selection: Vertical/Horizontal placement
+
+		switch (z) {
+		case 1: //Vertical Placement
+			while ((board[x][y + c] == ' ') && (y + c <= 10)) {
+				c++;  /*Counts how many spaces are available in col*/
+			}
+			if (y + vessel.size - 1 < (y + c)) /*IF ship fits available spaces*/ {
+
+				//Log destination coordinates
+				vessel.gps[0][0] = x;		//Starting x-coord
+				vessel.gps[0][1] = y;		//Starting y-coord
+				vessel.gps[1][0] = x;		//Ending x-coord
+				vessel.gps[1][1] = y + c;	//Ending y-coord
+
+				fits = 1; //End Loop Marker
+
+			} //Measures if ship fits position
+			break;
+
+		case 2: //Horizontal Placement
+			while ((board[x + c][y] == ' ') && (x + c <= 10)) {
+				c++;  /*Counts how many spaces are available in row*/
+			}
+			if (x + vessel.size - 1 < (x + c)) /*IF ship fits available spaces*/ {
+
+				//Log destination coordinates
+				vessel.gps[0][0] = x;		//Starting x-coord
+				vessel.gps[0][1] = y;		//Starting y-coord
+				vessel.gps[1][0] = x + c;	//Ending x-coord
+				vessel.gps[1][1] = y;		//Ending y-coord
+
+
+				fits = 1;
+			} //Measures if ship fits position
+		}
+	} while (fits != 1);
+
+	//Deploy
+	switch (z) {
+	case 1: //Vertical Y
+
+		for (int i = 0; i < vessel.size; i++) {
+			board[x][y + i] = vessel.letter;
+		}
+
+		break;
+
+	case 2: //Horizontal X
+
+		for (int i = 0; i < vessel.size; i++) {
+			board[x + i][y] = vessel.letter;
+		}
+
+		break;
+	}
+
+}
+
+void display(char board[10][10]) {
+
+	HANDLE  hConsole;
+
+	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);		//	Allows modification of Console
+
+
+
+		/*
+			SetConsoleTextAttribute(hConsole, 7);	//	7 == white on black
+			SetConsoleTextAttribute(hConsole, 23);	//	159 == white on blue
+			SetConsoleTextAttribute(hConsole, 144);	//	144 == black on blue
+			SetConsoleTextAttribute(hConsole, 156); //	156 == red on blue
+		*/
+	
+	CLS;
+	SetConsoleTextAttribute(hConsole, 7);
+	flagHeader();
+	printf("                                                              ");
+	printf("  | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10|\n");
+	for (int i = 0; i < 10; i++) {
+		SetConsoleTextAttribute(hConsole, 7);
+		printf("                                                              ");
+		if (i + 1 == 10) {
+			SetConsoleTextAttribute(hConsole, 7);
+			printf("%d|", i + 1);
+			SetConsoleTextAttribute(hConsole, 159);
+			printf(" ");
+		}
+		else
+		{
+			SetConsoleTextAttribute(hConsole, 7);
+			printf(" %d|", i + 1);
+			SetConsoleTextAttribute(hConsole, 159);
+			printf(" ");
+		}
+		for (int j = 0; j < 10; j++)
+			if (board[i][j] == ' ') {
+				SetConsoleTextAttribute(hConsole, 144);
+				printf("%c ", board[i][j]);
+				SetConsoleTextAttribute(hConsole, 159);
+				if (j == 9) {
+					printf("|");
+				}
+				else {
+					printf("| ");
+				}
+			}
+			else if (board[i][j] == 'M'){
+				SetConsoleTextAttribute(hConsole, 159);
+				printf("%c ", board[i][j]);
+				if (j == 9) {
+					printf("|");
+				}
+				else {
+					printf("| ");
+				}
+			}
+			else {
+				SetConsoleTextAttribute(hConsole, 156);
+				printf("%c ", board[i][j]);
+				SetConsoleTextAttribute(hConsole, 159);
+				if (j == 9) {
+					printf("|");
+				}
+				else {
+					printf("| ");
+				}
+			}
+			
+		printf("\n");
+		SetConsoleTextAttribute(hConsole, 7);
+	}
+	flagFooter();
+
+}
+
+void flagHeader() {
+	printf("                                                                                                                                                      \n");
+	printf("                                                                                                                                                      \n");
+	printf("                                                                                                                                                      \n");
+	printf("                                      ,i2Br:rs       ss     5s:rsGXi:ssHiir2Ms:iHi,rGS,    ,iXMsrsH  rrisM ,sBr,   :rGX, :sBi, i5@rrs2                \n");
+	printf("                                        9B   @@     ,B@,    i   ,Bs   r:   i@   ,,  @X       B@   : 9B   r  ;B       @B   sB    M@   G@               \n");
+	printf("                                        s@  ,@s     G r@         @:        ,B       Br       GG  ,  r@S     ,@       B2   :@    2@   rB               \n");
+	printf("                                        sB,i5s     S:  G@        Bi        ,@       @r       9@,:9i  ,9B@,  ,Br:i:iirBs   iB    HB ,sH,               \n");
+	printf("                                        s@    BH  :@,:,iBs       @i        ,B       Br       GX         r@, ,@       Bs   i@    S@                    \n");
+	printf("                                        M@   ,@2 ,@     :Bi     ,B2        r@      ,@2    s  B@   ::i   ,B, r@       BM   sB    BB                    \n");
+	printf("                                       iH@siis:  92     :GM,   ,rM5,      ,2Br    ,sGMssr9s i9BsrsS,Mr:ir  ,s@i,   ,rG9  :2@:  iSM,                   \n");
+	printf("                                                                                                                                                      \n");
+	printf("                                                                                                                                                      \n");
+}
+
+void flagFooter() {
+	printf("                                                                                                                                                      \n");
+	printf("                                                                                                                                                      \n");
+	printf("                                                                                       v                                                              \n");
+	printf("                                                                                       @7O                                                            \n");
+	printf("                                                                                       7X:                                                            \n");
+	printf("                                                                                      j 2 :                                                           \n");
+	printf("                                                                                       LBu, Y.                                                        \n");
+	printf("                                                                                      :77B: E                                                         \n");
+	printf("                                                                                     v7 7v: U                                                         \n");
+	printf("                                                                S.   :              uYi v.Lir1L  J:   7i                                              \n");
+	printf("                                                                M    G.     ,    8 ui krB@7uM@B  O    E,                                              \n");
+	printf("                                                             . .5    5   ,  M    L@: .7.@B ,B@@. 2    G                                               \n");
+	printf("                                                             PYu: .r,M7:EL  N     @,,@. ,2  v  Fvu...7u                            .                  \n");
+	printf("                                                            Fr:7J 75.   17. 5     2  q  u,  N0rir:...Lv           .                .                  \n");
+	printf("                                        :             LL7v7rP7:iPiG;      .F@ B@ ,8ivXi7J   .7...i:. iu          BY@7Y: .....:,:::.u                  \n");
+	printf("                                r       SB.:rYPG5v,   G            ri0@BOi.L@.k@iJ                :irr@..,::::Liru7vi77iri;ii:::.,02                  \n");
+	printf("                                .i :Li::.@B@B@B@B@Y::YP::::i:::::::,:,...:::.i,.:::iiii;;r;riiii::,.  .:,:.,..7r    .           ,U,                   \n");
+	printf("                                 i@7.                                                                         ;  ,;i:         .1L                     \n");
+	printf("                                   uN0qPXqFuFk1UJujujUuUYjYjYjYuJuYjYjYJJjJjj512Juu1FqqENZq0XXF2LuU2u2u2u2u2uULLjYLJvuuUuUuFXO2                       \n");
+	printf("                                    iBOB@G@B@@@@@B@B@B@B@B@@@B@B@B@@@B@B@B@B@@@B@B@B@B@MMGZPPFXN@B@B@B@@@B@B@B@@@B@B@B@B@B@B@                         \n");
+	printf("                                      rL :7Z...i0@MMOMGGM@BBMBMMMMMMOMOO8OOMMr 5OMOZuuJU1XPZGMM@BBOOOO8OOMOMOO8O8MM@@@B@@@B@N                         \n");
+	printf("                                         .                                                                                ,.                          \n");
+	printf("                                                                                                                                                      \n");
+}
+
+void gameLoading(int gameScores[TOPTEN]) {
+	FILE *battleShipScores;
+	
+	battleShipScores = fopen("battleShipTopScores.bin", "rb");	//	Connects to score file
+
+	if (battleShipScores == NULL) {		//	If it doesn't exist or cant reach it, it occupies the score array with the out of bounds number
+		for (int i = 0; i < TOPTEN; i++) {
+			gameScores[i] = 10000;
+		}
+	}
+	else {
+		fread(&gameScores, sizeof(int), TOPTEN, battleShipScores);	//	if read successfully, loads it.
+
+	}
+	fclose(battleShipScores);
+}
+
+void gameRecording(int gameScores[TOPTEN]) {
+	FILE* binaryOutput;
+	
+	binaryOutput = fopen("battleShipTopScores.bin", "wb");	//	Creates a save file when exitting program
+	fwrite(gameScores, sizeof(int), TOPTEN, binaryOutput);	//	stores the score array
+	fclose(binaryOutput);
+
+} // end gameScore
+
+void loadscreen(int *selection) {
+	int x;
+	CLS;
+	printf("                                                                                                                                                      \n");
+	printf("                                                                                                                                                      \n");
+	printf("                              ,:                                                                                                                      \n");
+	printf("                              is      ,i2Br:rs       ss     5s:rsGXi:ssHiir2Ms:iHi,rGS,    ,iXMsrsH  rrisM ,sBr,   :rGX, :sBi, i5@rrs2                \n");
+	printf("                              ir        9B   @@     ,B@,    i   ,Bs   r:   i@   ,,  @X       B@   : 9B   r  ;B       @B   sB    M@   G@               \n");
+	printf("                              :r        s@  ,@s     G r@         @:        ,B       Br       GG  ,  r@S     ,@       B2   :@    2@   rB               \n");
+	printf("                              ii        sB,i5s     S:  G@        Bi        ,@       @r       9@,:9i  ,9B@,  ,Br:i:iirBs   iB    HB ,sH,               \n");
+	printf("                              ii        s@    BH  :@,:,iBs       @i        ,B       Br       GX         r@, ,@       Bs   i@    S@                    \n");
+	printf("                              ii        M@   ,@2 ,@     :Bi     ,B2        r@      ,@2    s  B@   ::i   ,B, r@       BM   sB    BB                    \n");
+	printf("                              i:       iH@siis:  92     :GM,   ,rM5,      ,2Br    ,sGMssr9s i9BsrsS,Mr:ir  ,s@i,   ,rG9  :2@:  iSM,                   \n");
+	printf("                              s2                                                                                                                      \n");
+	printf("                              rS                                                                                                                      \n");
+	printf("                              is                                                                                                                      \n");
+	printf("                              i2                                                                                                                      \n");
+	printf("                              is                      Sss                                                                                             \n");
+	printf("                              ,r                      MG@                                                                                             \n");
+	printf("                             sGX2                       ,:s                                                                                           \n");
+	printf("                              ;@i                      :;2Xr                                                                                          \n");
+	printf("                               X2                    :MG2XXS                                                                                          \n");
+	printf("                               S2Gr        9X9i      rr,,,rS                                                                                          \n");
+	printf("                              :G  2G:     isrs5      i,:rr ,:2,                                                                                       \n");
+	printf("                            ,ss2   ,9X    ,ss ,      : ,:,   i                                                                                        \n");
+	printf("                            ,B92,    :9s  ,Br i      ,iX:  99s                        ###   ::iB@9::iB@9::iB@9                                        \n");
+	printf("                       ss    ,HX       :X:    ,      i       iss                     #   # ######::iB@9::iB@9                                         \n");
+	printf("                      rMG  : ,::: ,,,,:,rB@   @259s, , 2HrssisGGsr               ,,,,,,::iB@9::iB@9                                                   \n");
+	printf("                   ,  , ,  s i :2S9Srrri, sSG@Bir5Hr,s2SrisGrrrrrM,             i,,::::iB@99XGs                                                       \n");
+	printf("                   ss ,:;iXBsi :2,,,s2s   2rr5 ,,,,,:;9,,,, ,,,  :,::::::::,,,:iGr,,,,,,Mr,:r::,,,  ,,,,:;                                            \n");
+	printf("        rriiiiii::,,MXii,:r2BrrSrs,:r:2srM2s,,,,,,,,,,,,,,,:,::::ririi:i::@@@@MG2s,           :  ,i:,::::@B@BM99:,,,,,,,,,,:,::::iiiiiiiirirr:        \n");
+	printf("       :s,,,,,,,,,,,, ,,,,  ,::i,,,,:,iii:,,,::::::::::,:,:,,,:,,::rrrsrsrr,,,,,,rrrrrririiisssrsrri       ,,::iiiii:i::::::,:,,,,,,,,,, is           \n");
+	printf("       r                                                                                                                                :,            \n");
+	printf("       r                                                                                                                               i              \n");
+	printf(" ,r,,,:s,   ,,,,,:,:,:,:,:,:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ,,,,,,,,,,, ,   ,     , ,                                          i               \n");
+	printf(" ,SMMM@GBH2s;ri,::::::::::::::::::::::::::::::::::::::iii:iiiiiiii;iiiii;iiiiiririrrr;r;r;r;rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr;r;irGG@2sBBG@9r     \n");
+	printf("      ,i,:rr:Ssi    Created by: Michael Brady, Kenny Cheng, Norman Matías                                                             ,sX2 :2,,       \n");
+	printf("        ,,, r  r                                                                                                                     rri ,,           \n");
+	printf("           ,ii iisrsr,                                                                                                               s, ,             \n");
+	printf("            ,2i:s,  ,rs,,:::::::::i:::i:::i:::::::,::::::::,:::::::::::::::::::::::::,:::::::,:,:,:,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,s;                \n");
+	printf("                         ,,,,,,,,,,,,:,:,:,:,:,:,:,:,:,:,:,,,:,:,,,:,:,:,:,:,:::,:,:::::::::::::::::,:,:,:::::::,::::::::::::::::i:i,                 \n");
+	printf("                                                                                                                                                      \n");
+	printf("                                                               **********************                                                                 \n");
+	printf("                                                               * 1) New Game        *                                                                 \n");
+	printf("                                                               * 2) High Scores     *                                                                 \n");
+	printf("                                                               * 3) Exit            *                                                                 \n");
+	printf("                                                               **********************                                                                 \n");
+	printf("                                                               ENTER SELECTION: "); scanf_s("%d", &x); *selection = x;
+}
+
+void launchMissile(char x, char y, int *hits, char board[10][10], char screenboard[10][10]) {
+	x--;//account for 0 row
+	y--;//account for 0 col
+	if (board[x][y] != ' ') {
+		printf("\n THE MISSILE HIT AN ENEMY SHIP!\n");
+		screenboard[x][y] = board[x][y];
+		*hits++;
+		PAUSE;
+	}
+	else
+	{
+		printf("\n THE MISSILE MISSED!\n");
+		screenboard[x][y] = 'M';
+		PAUSE;
+	}
+}
+
+void newGame(SHIP crusor, SHIP aircraft, SHIP battleship, SHIP submarine, SHIP destroyer, char board[10][10], char screenboard[10][10], int gameScores[TOPTEN]) {
+
+	int shots = 0, hits = 0; //Score
+	int newShot, gameOver = 0; //Terminators
+	int x, y; //x,y coords
+	int launchSequence[10][10]; // x, y log of missiles launched
+	int outOfLimits = 0;
+
+	for (int i = 0; i < 10; i++) {
+		for (int j = 0; j < 10; j++) {
+			launchSequence[i][j] = 0;	//	fills shot tracker array
+		}
+	}
+
+	clearBoard(screenboard); //	clears board for new game
+	clearBoard(board);
+
+	deploy(crusor, board);	//	place boats
+	deploy(aircraft, board);
+	deploy(battleship, board);
+	deploy(submarine, board);
+	deploy(destroyer, board);
+	do {
+		do {
+			newShot = 1;
+			display(screenboard);
+			printf("          We are ready to fire at the enemy commander.\n");
+
+			do {
+				outOfLimits = 0;
+				printf("          Enter target row for missile launch: ");
+				scanf("%d", &x);
+				clearBuffer();
+
+				printf("          Enter target column for missile launch: ");
+				scanf("%d", &y);
+				clearBuffer();
+
+				if (x > 10 || x < 1) {	//	error checking
+					outOfLimits = 1;
+					printf("\nPlease Enter a valid coordinate.\n");
+					continue;
+				}
+				else if(y > 10 || y < 1) {	//	error checking
+					outOfLimits = 1;
+					printf("\nPlease Enter a valid coordinate.\n");
+					continue;
+				}
+
+				if (launchSequence[x][y] == 0) {	//	checks for repetition in shots
+					launchSequence[x][y] = 1;
+				}
+				else {
+					printf("\n\tYou have already fired there!\n");
+					newShot = 0;
+					printf("\t\t");
+					PAUSE;
+				}
+
+			} while (outOfLimits != 0);
+		} while (newShot != 1);
+
+		shots++;	//	shot counter
+		launchMissile(x, y, &hits, board, screenboard);	//	fires missle
+
+		if (hits == 17) {	//	victory condition checker
+			gameOver = 1;
+			scoreRecording(shots, gameScores);
+		}
+
+	} while (gameOver != 1);
+}
+
+int rng(int min, int max) {
+	int number;
+	do {
+		number = rand() % max + 1;
+	} while (number<min);
+	return number;
+} //Random number generator.
+
+void scoreRecording(int shots, int gameScores[TOPTEN]) {
+	int temp;
+	
+	if (shots < gameScores[9]) {	// if number of shots is less than 10th highest score, it takes its place then resorts array
+		gameScores[9] = shots;
+	}
+
+	for (int i = 0; i < TOPTEN; i++) {
+		if (gameScores[i] > gameScores[i + 1]) {
+			temp = &gameScores[i];
+			gameScores[i] = gameScores[i + 1];
+			gameScores[i + 1] = temp;
+		}
+	}
+}
+
+void showTopTen(int finalGameResults[TOPTEN]) {
+	CLS;
+	printf("Top 10 Scores: \n");
+
+	if (finalGameResults[0] == 10000) {	//	checks for out of bounds value to determine if there's been a score yet
+		printf("There have been no games recorded yet.\n");
+	}
+	else {
+		for (int i = 0; i < 10; i++) {	//	prints scores
+			if (finalGameResults[i] != 10000) {
+				printf("%i. %i", i + 1, finalGameResults[i]);
+				printf("\n");
+			}
+		}
+	}
+	PAUSE;
+}
