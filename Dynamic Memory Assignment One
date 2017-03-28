@@ -1,0 +1,124 @@
+/////////////////////////////////////////////////
+//	Created By: Michael Braddy
+//	Created on: 3/27/17
+//	Created for: Dynamic Memory Assignment 1
+/////////////////////////////////////////////////
+
+#define _CRT_SECURE_NO_WARNINGS
+#define CLS system("cls")
+#define FLUSH fflush(stdin)
+#define PAUSE system("pause")
+
+#include <stdlib.h>
+#include <stdio.h>
+
+//	Prototypes
+void menu();
+//	End prototype
+
+typedef struct {
+	char name[25];
+	int examOne;
+	int examTwo;
+	int examThree;
+	int examFour;
+
+} STUDENT;	//	Student struct
+
+main() {
+	int howMany;	//	Input for how many students in class
+	STUDENT *classScores;	//	Array of Students
+	int mSelection;		//	Menu input
+	int counter = 0;	//	Counter for which student is entered within the array
+	char input[25];
+
+	printf("How many students would you like the array to hold?\nEnter a number: ");
+	scanf("%d", &howMany);
+	classScores = calloc(howMany, sizeof(STUDENT));	//	Allocates and clears memory for Dynamic STUDENT Array
+	CLS;
+
+	if (classScores == NULL) {	//	Failure check
+		printf("Failed to allocate memory\n");
+		PAUSE;
+		exit(-1);
+	}
+
+	do {
+		mSelection = 0;
+		CLS;
+		menu();
+		scanf("%d%*c", &mSelection);	//	%*c to clear the input buffer of \n (fflush(stdin) wasnt working)
+
+		switch (mSelection) {
+		case 1:
+			if (counter < howMany) {
+				CLS;
+				printf("Enter the student's Name (25 Char Max): ");
+				fgets(input, 25, stdin);	//	gets string input with white space
+				strcpy(classScores[counter].name, input);	//	copies input to the current student's name variable
+				printf("Enter the student's score on Exam One: ");
+				scanf("%i", &classScores[counter].examOne);	
+				printf("Enter the student's score on Exam Two: ");
+				scanf("%i", &classScores[counter].examTwo);
+				printf("Enter the student's score on Exam Three: ");
+				scanf("%i", &classScores[counter].examThree);
+				printf("Enter the student's score on Exam Four: ");
+				scanf("%i", &classScores[counter].examFour);
+				counter++;
+			}
+			else {
+				CLS;
+				printf("You can't add anymore students.");	//	Array limit check
+			}
+			break;
+		case 2:
+			CLS;
+			for (int i = 0; i < counter; i++) {	
+				printf("Student %i: %sExam One: %i\tExam Two: %i\tExam Three: %i\tExam Four: %i\n\n ", i + 1, classScores[i].name, classScores[i].examOne, classScores[i].examTwo, classScores[i].examThree, classScores[i].examFour);
+			}
+			break;
+		case 3:
+			CLS;
+			for (int i = 0; i < counter; i++) {
+				int sum = 0;	//	Sum
+				int average = 0;	//	Average
+				sum = classScores[i].examOne + classScores[i].examTwo + classScores[i].examThree + classScores[i].examFour;
+				average = sum / 4;
+				printf("Student %i: %sExam Average: %i\n\n ", i + 1, classScores[i].name, average);
+			}
+			break;
+		case 4:
+			CLS;
+			if (counter != 0) {
+				int sum = 0;	//	Sum
+				int average = 0;	//	Averages
+				for (int i = 0; i < counter; i++)
+					sum += (classScores[i].examOne + classScores[i].examTwo + classScores[i].examThree + classScores[i].examFour);
+
+				average = sum / (counter * 4);
+
+				printf("Class Average: %i", average);
+			}
+			else {
+				printf("You haven't entered any students yet.");
+			}
+			break;
+		case 5:
+			printf("Exitting.");
+			break;
+
+		}
+		PAUSE;
+	} while (mSelection != 5);
+
+	free(classScores);
+
+}
+
+void menu() {
+	printf("\t\t\tMain Menu: \n");
+	printf("==================================================================\n");
+	printf("1. Add a student (this populates all five fields for the student)\n2. Display all student records(shows a list of names and grades)\n");
+	printf("3. Display student average(shows a list of name and average)\n4. Display class average\n5. Quit\n\n");
+	printf("Enter Selection: ");
+}
